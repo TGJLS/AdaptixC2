@@ -182,11 +182,11 @@ RUN git clone https://github.com/Adaptix-Framework/go-win7 /tmp/go-win7 && \
 
 WORKDIR /app
 
-COPY ./AdaptixServer/server-dist/adaptixserver /app/adaptixserver
-COPY ./AdaptixServer/server-dist/profile.yaml /app/profile.yaml
-COPY ./AdaptixServer/server-dist/404page.html /app/404page.html
-COPY ./AdaptixServer/server-dist/ssl_gen.sh /app/ssl_gen.sh
-COPY ./AdaptixServer/server-dist/extenders /app/extenders
+COPY --from=build-server-ext /app/dist/adaptixserver /app/adaptixserver
+COPY --from=build-server-ext /app/dist/profile.yaml /app/profile.yaml
+COPY --from=build-server-ext /app/dist/404page.html /app/404page.html
+COPY --from=build-server-ext /app/dist/ssl_gen.sh /app/ssl_gen.sh
+COPY --from=build-server-ext /app/dist/extenders /app/extenders
 
 RUN mkdir -p /app/data && \
     echo '#!/bin/bash\n\
