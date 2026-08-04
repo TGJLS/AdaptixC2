@@ -166,12 +166,16 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     git \
     && rm -rf /var/lib/apt/lists/*
 
-RUN wget https://go.dev/dl/go1.25.4.linux-amd64.tar.gz -O /tmp/go1.25.4.linux-amd64.tar.gz && \
-    rm -rf /usr/local/go /usr/local/bin/go && \
-    tar -C /usr/local -xzf /tmp/go1.25.4.linux-amd64.tar.gz && \
-    ln -s /usr/local/go/bin/go /usr/local/bin/go && \
-    rm /tmp/go1.25.4.linux-amd64.tar.gz && \
-    echo "[+] Go 1.25.4 installed successfully"
+# Copy the exact Go toolchain used to compile adaptixserver so that plugin
+# .so files built in this container share the same compiler binary hash.
+# A freshly-downloaded Go tarball has a different binary hash even for the
+# same version string, causing Go plugin ABI mismatches at load time.
+COPY --from=base /usr/local/go /usr/local/go
+RUN ln -s /usr/local/go/bin/go /usr/local/bin/go && \
+    ln -s /usr/local/go/bin/gofmt /usr/local/bin/gofmt && \
+    echo "[+] Go $(go version) copied from build stage"
+
+ENV GOEXPERIMENT=jsonv2,greenteagc
 
 RUN git clone https://github.com/Adaptix-Framework/go-win7 /tmp/go-win7 && \
     mv /tmp/go-win7 /usr/lib/ && \
