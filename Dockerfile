@@ -192,12 +192,16 @@ COPY --from=build-server-ext /app/dist/404page.html /app/404page.html
 COPY --from=build-server-ext /app/dist/ssl_gen.sh /app/ssl_gen.sh
 COPY --from=build-server-ext /app/dist/extenders /app/extenders
 
-# Bundle AdaptixServer source + module cache so install-kharon.sh can rebuild
-# adaptixserver in-container without a git clone. Rebuilding with the same Go
-# binary as the one that will compile plugins ensures all shared package build
-# IDs match, which is what Go's plugin ABI check actually verifies.
+# Bundle AdaptixServer source, module cache, and build cache.
+# Plugin ABI requires every shared package (axc2 and its transitive deps)
+# to have the SAME compiled build ID as in adaptixserver.  The build cache
+# (/root/.cache/go-build) stores the compiled packages from the server build.
+# When install-kharon.sh builds Kharon inside AdaptixServer's go.work (same
+# dep graph), Go reuses those cached .a files → identical build IDs → plugin
+# loads without "different version of package" errors.
 COPY --from=build-server-ext /app/AdaptixServer /app/adaptixc2-src/AdaptixServer
 COPY --from=build-server-ext /go/pkg/mod /go/pkg/mod
+COPY --from=build-server-ext /root/.cache/go-build /root/.cache/go-build
 
 RUN mkdir -p /app/data && \
     echo '#!/bin/bash\n\
